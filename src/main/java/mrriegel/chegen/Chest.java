@@ -4,29 +4,35 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 
-import com.google.common.collect.Lists;
-
+import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.util.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+
+import com.google.common.collect.Lists;
 
 public class Chest {
 
 	List<Stack> items;
 	List<String> biomes;
 	boolean light;
-	int chance;
+	int chance,minY,maxY;
+
+	
 
 	public Chest(List<Stack> items, List<String> biomes, boolean light,
-			int chance) {
+			int chance, int minY, int maxY) {
 		super();
 		this.items = items;
 		this.biomes = biomes;
 		this.light = light;
 		this.chance = chance;
+		this.minY = minY;
+		this.maxY = maxY;
 	}
 
 	public static class Stack {
@@ -57,6 +63,8 @@ public class Chest {
 			}
 
 			public static List<Enchantment> getEnchantments(ItemStack s) {
+				if (EnchantmentHelper.getEnchantments(s).entrySet().size() == 0)
+					return null;
 				List<Enchantment> lis = Lists.newArrayList();
 				for (Entry<Integer, Integer> e : EnchantmentHelper
 						.getEnchantments(s).entrySet()) {
@@ -66,18 +74,20 @@ public class Chest {
 				return lis;
 			}
 
-			public static ItemStack getItemStack(Enchantment s) {
-				
-				return net.minecraft.enchantment.Enchantment
-						.getEnchantmentById(s.id);
+			public static ItemStack enchantItemStack(Enchantment e, ItemStack s) {
+				s.addEnchantment(net.minecraft.enchantment.Enchantment
+						.getEnchantmentById(e.id), e.strength);
+				return s;
 			}
 
 		}
 
 		public static Stack getStack(ItemStack s) {
 			String[] ar = s.getItem().getRegistryName().split(":");
-			return new Stack(ar[0], ar[1], s.getItemDamage(), s.stackSize,
-					s.stackSize, 100, null);
+			Stack stack = new Stack(ar[0], ar[1], s.getItemDamage(),
+					s.stackSize, s.stackSize, 100, null);
+			stack.enchantments = Enchantment.getEnchantments(s);
+			return stack;
 		}
 
 		public static ItemStack getItemStack(Stack s) {
@@ -90,8 +100,32 @@ public class Chest {
 				int size = rand.nextInt((s.maxSize - s.minSize) + 1)
 						+ s.minSize;
 				res = new ItemStack(i, size, s.meta);
+				if (s.enchantments != null)
+					for (Enchantment e : s.enchantments)
+						res = Enchantment.enchantItemStack(e, res);
 			}
 			return res;
+		}
+	}
+
+	public boolean matchBiome(World world, BlockPos pos) {
+		if (biomes.contains("anywhere"))
+			return true;
+		if (biomes.contains(world.provider.getDimensionName().toLowerCase()))
+			return true;
+		String currentBiom = world.getWorldChunkManager().getBiomeGenerator(
+				new BlockPos(pos.getX(), 0, pos.getZ())).biomeName
+				.toLowerCase();
+		return biomes.contains(currentBiom);
+	}
+
+	public void fill(TileEntityChest tile) {
+		for (Stack s : items) {
+			int index = tile.getWorld().rand.nextInt(15);
+			while (tile.getStackInSlot(index) != null) {
+				index = tile.getWorld().rand.nextInt(15);
+			}
+			tile.setInventorySlotContents(index, Stack.getItemStack(s));
 		}
 	}
 

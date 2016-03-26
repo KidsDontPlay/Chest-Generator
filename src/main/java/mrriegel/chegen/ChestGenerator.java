@@ -20,6 +20,7 @@ import javax.annotation.Nonnull;
 import mrriegel.chegen.Chest.Stack;
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -61,7 +62,8 @@ public class ChestGenerator {
 	public void preInit(FMLPreInitializationEvent event) throws IOException {
 		configDir = new File(event.getModConfigurationDirectory(),
 				ChestGenerator.MODNAME);
-		ConfigHandler.refreshConfig(new File(configDir, "config.cfg"));
+		configDir.mkdir();
+		// ConfigHandler.refreshConfig(new File(configDir, "config.cfg"));
 		initFiles();
 	}
 
@@ -77,6 +79,8 @@ public class ChestGenerator {
 			Chest chest = new Gson().fromJson(new BufferedReader(
 					new FileReader(f)), new TypeToken<Chest>() {
 			}.getType());
+			if (chest.items.size() > 15)
+				throw new IllegalArgumentException("too many items");
 			chests.add(chest);
 		}
 	}
@@ -89,10 +93,6 @@ public class ChestGenerator {
 
 	@EventHandler
 	public void postInit(FMLPostInitializationEvent event) {
-		System.out.println("1: "
-				+ GameRegistry.findItem("ffs", "ffs:blockEnergyValve"));
-		System.out.println("2: "
-				+ GameRegistry.findItem("ffs", "blockEnergyValve"));
 	}
 
 	@SubscribeEvent
@@ -101,7 +101,6 @@ public class ChestGenerator {
 				&& e.entityPlayer.isSneaking()
 				&& e.entityPlayer.capabilities.isCreativeMode
 				&& e.world.getTileEntity(e.pos) instanceof TileEntityChest) {
-			System.out.println(chests);
 			File f = new File(configDir, (new SimpleDateFormat(
 					"yyyy.MM.dd'_'HH:mm:ss")).format(new Date()) + ".json");
 			f.createNewFile();
@@ -112,10 +111,12 @@ public class ChestGenerator {
 				if (tile.getStackInSlot(i) != null)
 					stacks.add(Stack.getStack(tile.getStackInSlot(i)));
 			String biom = e.world.provider.getDimensionName().toLowerCase();
-			Chest c = new Chest(stacks, Arrays.asList(biom), true, 100);
+			Chest c = new Chest(stacks, Arrays.asList(biom), true, 100, 1, 256);
 			FileWriter fw = new FileWriter(f);
 			fw.write(new GsonBuilder().setPrettyPrinting().create().toJson(c));
 			fw.close();
+			e.entityPlayer.addChatComponentMessage(new ChatComponentText(f
+					.getName() + " created."));
 			initFiles();
 			e.setCanceled(true);
 		}
