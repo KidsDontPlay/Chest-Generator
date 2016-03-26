@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -20,13 +19,10 @@ public class Chest {
 	List<Stack> items;
 	List<String> biomes;
 	boolean light;
-	int chance,minY,maxY;
-
-	
+	int chance, minY, maxY;
 
 	public Chest(List<Stack> items, List<String> biomes, boolean light,
 			int chance, int minY, int maxY) {
-		super();
 		this.items = items;
 		this.biomes = biomes;
 		this.light = light;
@@ -42,7 +38,6 @@ public class Chest {
 
 		public Stack(String modID, String name, int meta, int minSize,
 				int maxSize, int chance, List<Enchantment> enchantments) {
-			super();
 			this.modID = modID;
 			this.name = name;
 			this.meta = meta;
@@ -57,7 +52,6 @@ public class Chest {
 			int strength;
 
 			public Enchantment(int id, int strength) {
-				super();
 				this.id = id;
 				this.strength = strength;
 			}
@@ -121,9 +115,9 @@ public class Chest {
 
 	public void fill(TileEntityChest tile) {
 		for (Stack s : items) {
-			int index = tile.getWorld().rand.nextInt(15);
+			int index = tile.getWorld().rand.nextInt(tile.getSizeInventory());
 			while (tile.getStackInSlot(index) != null) {
-				index = tile.getWorld().rand.nextInt(15);
+				index = tile.getWorld().rand.nextInt(tile.getSizeInventory());
 			}
 			tile.setInventorySlotContents(index, Stack.getItemStack(s));
 		}

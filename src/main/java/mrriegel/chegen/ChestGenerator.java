@@ -10,34 +10,21 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
 
 import mrriegel.chegen.Chest.Stack;
-import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.ModContainer;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.GameData;
 import net.minecraftforge.fml.common.registry.GameRegistry;
-
-import org.apache.commons.lang3.text.WordUtils;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -74,12 +61,11 @@ public class ChestGenerator {
 			if (fileEntry.getName().endsWith(".json"))
 				files.add(fileEntry);
 		}
-
 		for (File f : files) {
 			Chest chest = new Gson().fromJson(new BufferedReader(
 					new FileReader(f)), new TypeToken<Chest>() {
 			}.getType());
-			if (chest.items.size() > 15)
+			if (chest.items.size() > new TileEntityChest().getSizeInventory())
 				throw new IllegalArgumentException("too many items");
 			chests.add(chest);
 		}
@@ -89,10 +75,6 @@ public class ChestGenerator {
 	public void init(FMLInitializationEvent event) {
 		GameRegistry.registerWorldGenerator(new WorldGenerator(), 1);
 		MinecraftForge.EVENT_BUS.register(this);
-	}
-
-	@EventHandler
-	public void postInit(FMLPostInitializationEvent event) {
 	}
 
 	@SubscribeEvent
