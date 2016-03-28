@@ -26,6 +26,8 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
+import org.apache.logging.log4j.Logger;
+
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -42,6 +44,8 @@ public class ChestGenerator {
 	@Instance(ChestGenerator.MODID)
 	public static ChestGenerator instance;
 
+	public static Logger logger;
+
 	public List<Chest> chests = Lists.newArrayList();
 	public File configDir;
 
@@ -49,8 +53,9 @@ public class ChestGenerator {
 	public void preInit(FMLPreInitializationEvent event) throws IOException {
 		configDir = new File(event.getModConfigurationDirectory(),
 				ChestGenerator.MODNAME);
+		logger = event.getModLog();
 		configDir.mkdir();
-		// ConfigHandler.refreshConfig(new File(configDir, "config.cfg"));
+		ConfigHandler.refreshConfig(new File(configDir, "config.cfg"));
 		initFiles();
 	}
 
@@ -67,13 +72,14 @@ public class ChestGenerator {
 			}.getType());
 			if (chest.items.size() > new TileEntityChest().getSizeInventory())
 				throw new IllegalArgumentException("too many items");
+			chest.name = f.getName().replaceAll(".json", "");
 			chests.add(chest);
 		}
 	}
 
 	@EventHandler
 	public void init(FMLInitializationEvent event) {
-		GameRegistry.registerWorldGenerator(new WorldGenerator(), 1);
+		GameRegistry.registerWorldGenerator(new WorldGenerator(), 30);
 		MinecraftForge.EVENT_BUS.register(this);
 	}
 
@@ -93,7 +99,8 @@ public class ChestGenerator {
 				if (tile.getStackInSlot(i) != null)
 					stacks.add(Stack.getStack(tile.getStackInSlot(i)));
 			String biom = e.world.provider.getDimensionName().toLowerCase();
-			Chest c = new Chest(stacks, Arrays.asList(biom), true, 100, 1, 256);
+			Chest c = new Chest(stacks, Arrays.asList(biom), true, 100, 1, 256,
+					f.getName().replaceAll(".json", ""));
 			FileWriter fw = new FileWriter(f);
 			fw.write(new GsonBuilder().setPrettyPrinting().create().toJson(c));
 			fw.close();

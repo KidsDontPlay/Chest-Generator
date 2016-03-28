@@ -20,27 +20,32 @@ public class Chest {
 	List<String> biomes;
 	boolean light;
 	int chance, minY, maxY;
+	transient String name;
 
 	public Chest(List<Stack> items, List<String> biomes, boolean light,
-			int chance, int minY, int maxY) {
+			int chance, int minY, int maxY, String name) {
 		this.items = items;
 		this.biomes = biomes;
 		this.light = light;
 		this.chance = chance;
 		this.minY = minY;
 		this.maxY = maxY;
+		this.name = name;
 	}
 
 	public static class Stack {
 		String modID, name;
-		int meta, minSize, maxSize, chance;
+		int minMeta, maxMeta, minSize, maxSize, chance;
 		List<Enchantment> enchantments;
 
-		public Stack(String modID, String name, int meta, int minSize,
-				int maxSize, int chance, List<Enchantment> enchantments) {
+		public Stack(String modID, String name, int minMeta, int maxMeta,
+				int minSize, int maxSize, int chance,
+				List<Enchantment> enchantments) {
+			super();
 			this.modID = modID;
 			this.name = name;
-			this.meta = meta;
+			this.minMeta = minMeta;
+			this.maxMeta = maxMeta;
 			this.minSize = minSize;
 			this.maxSize = maxSize;
 			this.chance = chance;
@@ -79,7 +84,7 @@ public class Chest {
 		public static Stack getStack(ItemStack s) {
 			String[] ar = s.getItem().getRegistryName().split(":");
 			Stack stack = new Stack(ar[0], ar[1], s.getItemDamage(),
-					s.stackSize, s.stackSize, 100, null);
+					s.getItemDamage(), s.stackSize, s.stackSize, 100, null);
 			stack.enchantments = Enchantment.getEnchantments(s);
 			return stack;
 		}
@@ -93,7 +98,9 @@ public class Chest {
 			if (i != null) {
 				int size = rand.nextInt((s.maxSize - s.minSize) + 1)
 						+ s.minSize;
-				res = new ItemStack(i, size, s.meta);
+				int meta = rand.nextInt((s.maxMeta - s.minMeta) + 1)
+						+ s.minMeta;
+				res = new ItemStack(i, size, meta);
 				if (s.enchantments != null)
 					for (Enchantment e : s.enchantments)
 						res = Enchantment.enchantItemStack(e, res);

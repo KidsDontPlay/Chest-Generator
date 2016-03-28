@@ -16,13 +16,15 @@ public class WorldGenerator implements IWorldGenerator {
 			IChunkProvider chunkGenerator, IChunkProvider chunkProvider) {
 		for (Chest chest : ChestGenerator.instance.chests) {
 			if (random.nextInt(600) >= chest.chance)
-				return;
+				continue;
 			for (int i = 0; i < 10; ++i) {
 				int j = chunkX * 16 + world.rand.nextInt(6)
 						- world.rand.nextInt(6);
 				int k = chunkZ * 16 + world.rand.nextInt(6)
 						- world.rand.nextInt(6);
 				BlockPos blockpos = new BlockPos(j, chest.minY, k);
+				if (!chest.matchBiome(world, blockpos))
+					continue;
 				int max = Math.min(chest.maxY, 256);
 				while (true) {
 					if (blockpos.getY() < max
@@ -40,8 +42,7 @@ public class WorldGenerator implements IWorldGenerator {
 				for (int ii = 0; ii < 3; ii++)
 					if (!world.isAirBlock(blockpos.up(ii + 1)))
 						foo = false;
-				if (foo && chest.matchBiome(world, blockpos)
-						&& generate(world, world.rand, blockpos, chest)) {
+				if (foo && generate(world, world.rand, blockpos, chest)) {
 					break;
 				}
 			}
@@ -50,10 +51,12 @@ public class WorldGenerator implements IWorldGenerator {
 
 	private boolean generate(World world, Random rand, BlockPos position,
 			Chest chest) {
-
 		BlockPos blockpos = new BlockPos(position);
-		world.setBlockState(blockpos, Blocks.chest.getDefaultState(), 2);
-		System.out.println("set: " + position);
+		world.setBlockState(blockpos,
+				Blocks.chest.getStateFromMeta(rand.nextInt(6)), 2);
+		if (ConfigHandler.debugOutput)
+			ChestGenerator.logger.info("Chest " + chest.name + " at "
+					+ blockpos);
 		TileEntity tileentity = world.getTileEntity(blockpos);
 
 		if (tileentity instanceof TileEntityChest) {
