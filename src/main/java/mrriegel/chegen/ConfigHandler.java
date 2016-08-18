@@ -14,8 +14,7 @@ public class ConfigHandler {
 		config = new Configuration(file);
 		config.load();
 
-		debugOutput = config.get(Configuration.CATEGORY_GENERAL, "debugOutput",
-				false).getBoolean();
+		debugOutput = config.get(Configuration.CATEGORY_GENERAL, "debugOutput", false).getBoolean();
 
 		if (config.hasChanged()) {
 			config.save();

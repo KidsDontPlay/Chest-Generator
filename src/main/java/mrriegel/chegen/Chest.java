@@ -7,8 +7,12 @@ import java.util.Random;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.potion.PotionType;
+import net.minecraft.potion.PotionUtils;
 import net.minecraft.tileentity.TileEntityChest;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
@@ -22,8 +26,7 @@ public class Chest {
 	int chance, minY, maxY;
 	transient String name;
 
-	public Chest(List<Stack> items, List<String> biomes, boolean light,
-			int chance, int minY, int maxY, String name) {
+	public Chest(List<Stack> items, List<String> biomes, boolean light, int chance, int minY, int maxY, String name) {
 		this.items = items;
 		this.biomes = biomes;
 		this.light = light;
@@ -38,9 +41,12 @@ public class Chest {
 		int minMeta, maxMeta, minSize, maxSize, chance;
 		List<Enchantment> enchantments;
 
-		public Stack(String modID, String name, int minMeta, int maxMeta,
-				int minSize, int maxSize, int chance,
-				List<Enchantment> enchantments) {
+		/* Poti potion; */
+
+		public Stack(String modID, String name, int minMeta, int maxMeta, int minSize, int maxSize, int chance, List<Enchantment> enchantments// ,
+																																				// Poti
+																																				// potion
+		) {
 			super();
 			this.modID = modID;
 			this.name = name;
@@ -50,6 +56,7 @@ public class Chest {
 			this.maxSize = maxSize;
 			this.chance = chance;
 			this.enchantments = enchantments;
+			/* this.potion = potion; */
 		}
 
 		public static class Enchantment {
@@ -65,44 +72,70 @@ public class Chest {
 				if (EnchantmentHelper.getEnchantments(s).entrySet().size() == 0)
 					return null;
 				List<Enchantment> lis = Lists.newArrayList();
-				for (Entry<Integer, Integer> e : EnchantmentHelper
-						.getEnchantments(s).entrySet()) {
-					lis.add(new Enchantment(e.getKey(), e.getValue()));
+				for (Entry<net.minecraft.enchantment.Enchantment, Integer> e : EnchantmentHelper.getEnchantments(s).entrySet()) {
+					lis.add(new Enchantment(e.getKey().getEnchantmentID(e.getKey()), e.getValue()));
 				}
 
 				return lis;
 			}
 
 			public static ItemStack enchantItemStack(Enchantment e, ItemStack s) {
-				s.addEnchantment(net.minecraft.enchantment.Enchantment
-						.getEnchantmentById(e.id), e.strength);
+				s.addEnchantment(net.minecraft.enchantment.Enchantment.getEnchantmentByID(e.id), e.strength);
 				return s;
 			}
 
 		}
 
+		// public static class Poti {
+		// String modID, name;
+		//
+		// public Poti(String modID, String name) {
+		// this.modID = modID;
+		// this.name = name;
+		// }
+		//
+		// public static Poti getPotion(ItemStack s) {
+		// if(!s.hasTagCompound()||!s.getTagCompound().hasKey("Potion"))
+		// return null;
+		// ResourceLocation r=new ResourceLocation(PotionUtils., resourcePathIn)
+		// return new Poti(modID, name)
+		// if (EnchantmentHelper.getEnchantments(s).entrySet().size() == 0)
+		// return null;
+		// List<Enchantment> lis = Lists.newArrayList();
+		// for (Entry<net.minecraft.enchantment.Enchantment, Integer> e :
+		// EnchantmentHelper.getEnchantments(s).entrySet()) {
+		// lis.add(new Enchantment(e.getKey().getEnchantmentID(e.getKey()),
+		// e.getValue()));
+		// }
+		//
+		// return lis;
+		// }
+		//
+		// public static ItemStack enchantItemStack(Poti e, ItemStack s) {
+		// PotionUtils.addPotionToItemStack(s,
+		// PotionType.getPotionTypeForName(e.modID + ":" + e.name));
+		// return s;
+		// }
+		//
+		// }
+
 		public static Stack getStack(ItemStack s) {
-			String[] ar = s.getItem().getRegistryName().split(":");
-			Stack stack = new Stack(ar[0], ar[1], s.getItemDamage(),
-					s.getItemDamage(), s.stackSize, s.stackSize, 100, null);
-			stack.enchantments = Enchantment.getEnchantments(s);
-			return stack;
+			return new Stack(s.getItem().getRegistryName().getResourceDomain(), s.getItem().getRegistryName().getResourcePath(), s.getItemDamage(), s.getItemDamage(), s.stackSize, s.stackSize, 100, Enchantment.getEnchantments(s));
 		}
 
-		public static ItemStack getItemStack(Stack s) {
+		public ItemStack getItemStack() {
 			Random rand = new Random();
-			if (rand.nextInt(100) >= s.chance)
+			if (rand.nextInt(100) >= chance)
 				return null;
-			Item i = GameRegistry.findItem(s.modID, s.name);
+			// Item i = GameRegistry.findItem(modID, name);
+			Item i = Item.REGISTRY.getObject(new ResourceLocation(modID, name));
 			ItemStack res = null;
 			if (i != null) {
-				int size = rand.nextInt((s.maxSize - s.minSize) + 1)
-						+ s.minSize;
-				int meta = rand.nextInt((s.maxMeta - s.minMeta) + 1)
-						+ s.minMeta;
+				int size = rand.nextInt((maxSize - minSize) + 1) + minSize;
+				int meta = rand.nextInt((maxMeta - minMeta) + 1) + minMeta;
 				res = new ItemStack(i, size, meta);
-				if (s.enchantments != null)
-					for (Enchantment e : s.enchantments)
+				if (enchantments != null)
+					for (Enchantment e : enchantments)
 						res = Enchantment.enchantItemStack(e, res);
 			}
 			return res;
@@ -112,11 +145,9 @@ public class Chest {
 	public boolean matchBiome(World world, BlockPos pos) {
 		if (biomes.contains("anywhere"))
 			return true;
-		if (biomes.contains(world.provider.getDimensionName().toLowerCase()))
+		if (biomes.contains(world.provider.getDimensionType().toString().toLowerCase()))
 			return true;
-		String currentBiom = world.getWorldChunkManager().getBiomeGenerator(
-				new BlockPos(pos.getX(), 0, pos.getZ())).biomeName
-				.toLowerCase();
+		String currentBiom = world.getChunkFromBlockCoords(pos).getBiome(pos, world.getBiomeProvider()).getBiomeName();
 		return biomes.contains(currentBiom);
 	}
 
@@ -126,7 +157,7 @@ public class Chest {
 			while (tile.getStackInSlot(index) != null) {
 				index = tile.getWorld().rand.nextInt(tile.getSizeInventory());
 			}
-			tile.setInventorySlotContents(index, Stack.getItemStack(s));
+			tile.setInventorySlotContents(index, s.getItemStack());
 		}
 	}
 
