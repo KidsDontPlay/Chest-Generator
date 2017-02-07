@@ -12,6 +12,7 @@ import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.fml.common.IWorldGenerator;
 
 public class WorldGenerator implements IWorldGenerator {
+
 	@Override
 	public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator chunkGenerator, IChunkProvider chunkProvider) {
 		for (Chest chest : ChestGenerator.instance.chests) {
@@ -23,7 +24,7 @@ public class WorldGenerator implements IWorldGenerator {
 				BlockPos blockpos = new BlockPos(j, chest.minY, k);
 				if (!chest.matchBiome(world, blockpos))
 					continue;
-				int max = Math.min(chest.maxY, 256);
+				int max = Math.min(chest.maxY, world.getActualHeight());
 				while (true) {
 					if (blockpos.getY() < max && world.getBlockState(blockpos.down()).getMaterial().blocksMovement() && world.isAirBlock(blockpos))
 						break;
@@ -63,15 +64,12 @@ public class WorldGenerator implements IWorldGenerator {
 			if (world.isAirBlock(blockpos2) && world.getBlockState(blockpos2.down()).getMaterial().blocksMovement()) {
 				world.setBlockState(blockpos2, Blocks.TORCH.getDefaultState(), 2);
 			}
-
 			if (world.isAirBlock(blockpos1) && world.getBlockState(blockpos1.down()).getMaterial().blocksMovement()) {
 				world.setBlockState(blockpos1, Blocks.TORCH.getDefaultState(), 2);
 			}
-
 			if (world.isAirBlock(blockpos3) && world.getBlockState(blockpos3.down()).getMaterial().blocksMovement()) {
 				world.setBlockState(blockpos3, Blocks.TORCH.getDefaultState(), 2);
 			}
-
 			if (world.isAirBlock(blockpos4) && world.getBlockState(blockpos4.down()).getMaterial().blocksMovement()) {
 				world.setBlockState(blockpos4, Blocks.TORCH.getDefaultState(), 2);
 			}

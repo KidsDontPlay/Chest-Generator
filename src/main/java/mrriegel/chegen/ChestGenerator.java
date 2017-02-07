@@ -16,9 +16,7 @@ import mrriegel.chegen.Chest.Stack;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickEmpty;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -36,7 +34,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
-@Mod(modid = ChestGenerator.MODID, name = ChestGenerator.MODNAME, version = ChestGenerator.VERSION)
+@Mod(modid = ChestGenerator.MODID, name = ChestGenerator.MODNAME, version = ChestGenerator.VERSION, acceptableRemoteVersions = "*")
 public class ChestGenerator {
 	public static final String MODID = "chegen";
 	public static final String VERSION = "1.0.1";
@@ -65,11 +63,12 @@ public class ChestGenerator {
 			if (fileEntry.getName().endsWith(".json"))
 				files.add(fileEntry);
 		}
+		chests.clear();
 		for (File f : files) {
 			Chest chest = new Gson().fromJson(new BufferedReader(new FileReader(f)), new TypeToken<Chest>() {
 			}.getType());
 			if (chest.items.size() > new TileEntityChest().getSizeInventory())
-				throw new IllegalArgumentException("too many items");
+				throw new IllegalArgumentException("too many items in " + f.getName());
 			chest.name = f.getName().replaceAll(".json", "");
 			chests.add(chest);
 		}
@@ -89,14 +88,14 @@ public class ChestGenerator {
 			List<Stack> stacks = Lists.newArrayList();
 			TileEntityChest tile = (TileEntityChest) e.getWorld().getTileEntity(e.getPos());
 			for (int i = 0; i < tile.getSizeInventory(); i++)
-				if (tile.getStackInSlot(i) != null)
+				if (!tile.getStackInSlot(i).isEmpty())
 					stacks.add(Stack.getStack(tile.getStackInSlot(i)));
 			String biom = e.getWorld().provider.getDimensionType().toString().toLowerCase();
 			Chest c = new Chest(stacks, Arrays.asList(biom), true, 100, 1, 256, f.getName().replaceAll(".json", ""));
 			FileWriter fw = new FileWriter(f);
 			fw.write(new GsonBuilder().setPrettyPrinting().create().toJson(c));
 			fw.close();
-			e.getEntityPlayer().addChatComponentMessage(new TextComponentString(f.getName() + " created."));
+			e.getEntityPlayer().sendMessage(new TextComponentString(f.getName() + " created."));
 			initFiles();
 			e.setCanceled(true);
 		}
